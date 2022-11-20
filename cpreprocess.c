@@ -51,5 +51,8 @@ char *preprocess(char *input) {
   input = strReplace(input, "?""?<", "{");
   input = strReplace(input, "?""?>", "}");
   input = strReplace(input, "?""?-", "~");
+
+  input = strReplace(input, "\\\n", "");
+
   return input;
 }

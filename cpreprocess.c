@@ -1,6 +1,8 @@
 #include "cpreprocess.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 char *strReplace(char *orig, char *rep, char *with) {
   char *result;
@@ -41,6 +43,10 @@ char *strReplace(char *orig, char *rep, char *with) {
   return result;
 }
 
+int countChars(char *s, char c) {
+  return *s == '\0' ? 0 : countChars(s + 1, c) + (*s == c);
+}
+
 char *preprocess(char *input) {
   input = strReplace(input, "?""?=", "#");
   input = strReplace(input, "?""?/", "\\");
@@ -54,28 +60,69 @@ char *preprocess(char *input) {
 
   input = strReplace(input, "\\\n", "");
 
+  char **lines = calloc(countChars(input, '\n') + 2, sizeof(char *));
   size_t inputLen = strlen(input);
   char *line = strtok(input, "\n");
+  int linesIndex = 0;
   while (line != NULL) {
-    if (line && *line != '\0') {
-      size_t lineLen = strlen(line);
-      for (int i = 0; i < lineLen; i++) {
-        if (line[i] == '/' && line[i + 1] && line[i + 1] == '/') {
-          line[i] = ' ';
-          for (int j = i + 1; j < lineLen; j++)
-            line[j] = '\0';
-        }
-      }
-    }
+    lines[linesIndex++] = line;
     line = strtok(NULL, "\n");
   }
 
-  for (int i = 0; i < inputLen; i++) {
-    if (input[i] == '\0') {
-      input[i] = '\n';
-      while (input[i++] == '\0');
+  linesIndex = 0;
+  while (true) {
+    if (!lines[linesIndex])
+      break;
+    char *line = lines[linesIndex++];
+    size_t lineLen = strlen(line);
+    for (int i = 0; i < lineLen; i++) {
+      if (line[i] == '/' && line[i + 1] && line[i + 1] == '/') {
+        line[i] = ' ';
+        for (int j = i + 1; j < lineLen; j++)
+          line[j] = '\0';
+      }
     }
   }
 
-  return input;
+  linesIndex = 0;
+  while (true) {
+    if (!lines[linesIndex])
+      break;
+    char *line = lines[linesIndex++];
+    size_t lineLen = strlen(line);
+    for (int i = 0; i < lineLen; i++) {
+      if (line[i] == '/' && line[i + 1] && line[i + 1] == '*') {
+        line[i] = ' ';
+        for (int j = i + 1; j < lineLen; j++) {
+          if (line[j] == '*' && line[j + 1] && line[j + 1] == '/') {
+            if (line[j + 2])
+              strncpy(line, line + j + 2, lineLen - j - 2);
+            break;
+          } else {
+            line[j] = '\0';
+            if (j == lineLen - 1) {
+              line = lines[linesIndex++];
+              lineLen = strlen(line);
+              j = -1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  char *result = calloc(inputLen + 1, sizeof(char));
+  linesIndex = 0;
+  while (true) {
+    if (!lines[linesIndex])
+      break;
+    if (!linesIndex)
+      snprintf(result, inputLen + 1, "%s\n", lines[linesIndex++]);
+    else if (lines[linesIndex][0] != '\0')
+      snprintf(result + strlen(result), inputLen, "%s\n", lines[linesIndex++]);
+    else
+      linesIndex++;
+  }
+
+  return result;
 }

@@ -3,6 +3,7 @@
 #include "cpreprocess.h"
 #include <assert.h>
 #include <string.h>
+#include <stdio.h> // TODO: Remove
 
 int main(int argc, char *argv[]) {
   char *sample1 = "#include <stdio.h>\n"
@@ -24,16 +25,23 @@ int main(int argc, char *argv[]) {
   char *sample3 = "int something = 23; // comment1\n"
     "int somethingElse = 55;";
   char *expected3 = "int something = 23;  \n"
-    "int somethingElse = 55;";
-  printf("%s\n", preprocess(sample3));
+    "int somethingElse = 55;\n";
   assert(strcmp(preprocess(sample3), expected3) == 0);
 
   char *sample4 = "int something = 24; // comment1\n"
     "/* block\n"
     "comment */";
   char *expected4= "int something = 24;  \n"
-    " ";
+    " \n";
   assert(strcmp(preprocess(sample4), expected4) == 0);
+
+  char *sample5 = "int something = 24; // comment1\n"
+    "/* block\n"
+    "comment */ abc";
+  char *expected5= "int something = 24;  \n"
+    " \n"
+    " abc\n";
+  assert(strcmp(preprocess(sample5), expected5) == 0);
 }
 
 #endif

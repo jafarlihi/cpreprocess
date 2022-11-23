@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 char *strReplace(char *orig, char *rep, char *with) {
   char *result;
@@ -60,7 +61,8 @@ char *preprocess(char *input) {
 
   input = strReplace(input, "\\\n", "");
 
-  char **lines = calloc(countChars(input, '\n') + 2, sizeof(char *));
+  int numOfLines = countChars(input, '\n') + 2;
+  char **lines = calloc(numOfLines, sizeof(char *));
   size_t inputLen = strlen(input);
   char *line = strtok(input, "\n");
   int linesIndex = 0;
@@ -107,6 +109,17 @@ char *preprocess(char *input) {
             }
           }
         }
+      }
+    }
+  }
+
+  for (int i = 0; i < numOfLines; i++) {
+    if (lines[i]) {
+      for (int j = 0; j < strlen(lines[i]); j++) {
+        if (!isspace(lines[i][j]) && lines[i][j] != '#') break;
+        if (lines[i][j] == '#' && strncmp(lines[i] + j, "#include", strlen("#include")) == 0) {
+          // TODO
+        };
       }
     }
   }
